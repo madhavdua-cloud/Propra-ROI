@@ -1,0 +1,498 @@
+<!--
+  ===========================================================================
+  PROPRA — TIME-SAVINGS BY PLAN  (interactive one-pager, v6)
+  ---------------------------------------------------------------------------
+  Premise: show how much TIME each Propra plan gives back, visually and live.
+  Three plan bars (Essentials -> Professional -> Enterprise) step up; each
+  highlights the extra hours that tier unlocks and expands to show what it
+  automates. Everything scales with doors / wage / selected areas.
+
+  Model (Automation_Calculator_v6 + Value creation tab):
+  - Hours per area = task-level benchmarks, scaled to doors, editable.
+  - Savings = 20% of hours (10% where software already used).
+  - Per-door pricing: Essentials $3 / Professional $5 / Enterprise $20 /door/mo.
+  - Each plan's time saved = savings across selected areas that tier unlocks.
+
+  TO SET BEFORE LAUNCH (search "SET ME"):
+  - PRICING per-door values   -> confirm current list price.
+  - #proi-demo href           -> verified Book-a-demo URL.
+  ===========================================================================
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+.proi{
+  --violet:#561BD6; --violet-deep:#4316ad; --violet-2:#9F78FA;
+  --lavender:#ECE4FE; --lavender-soft:#F5F0FE;
+  --ink:#1A1A1A; --muted:#666666; --line:#ECEAF1;
+  --surface:#FFFFFF; --surface-alt:#FAFAFA; --ok:#19A974; --bad:#c4453d;
+  --shadow:0 1px 2px rgba(26,16,52,.04), 0 12px 32px -12px rgba(86,27,214,.18);
+  --radius:18px;
+  font-family:'Work Sans','Avenir Next','Segoe UI',sans-serif; color:var(--ink);
+  background:radial-gradient(120% 80% at 100% 0%, var(--lavender-soft) 0%, transparent 55%), var(--surface-alt);
+  line-height:1.5; -webkit-font-smoothing:antialiased;
+  padding:clamp(16px,3vw,40px); display:flex; justify-content:center; container-type:inline-size;
+}
+.proi *{box-sizing:border-box; margin:0;}
+.proi__shell{width:100%; max-width:1080px;}
+
+.proi__eyebrow{font-size:12.5px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--violet); display:flex; align-items:center; gap:9px; margin-bottom:14px;}
+.proi__eyebrow::before{content:""; width:22px; height:2px; background:var(--violet); border-radius:2px;}
+.proi__title{font-family:'Poppins',sans-serif; font-weight:700; letter-spacing:-.02em; font-size:clamp(26px,4.4cqw,40px); line-height:1.08; max-width:20ch;}
+.proi__title em{font-style:normal; color:var(--violet); position:relative; white-space:nowrap;}
+.proi__title em::after{content:""; position:absolute; left:0; right:0; bottom:.06em; height:.34em; background:var(--lavender); z-index:-1; border-radius:3px;}
+.proi__lede{color:var(--muted); font-size:clamp(14.5px,1.6cqw,16px); max-width:54ch; margin-top:12px;}
+
+.proi__grid{display:grid; grid-template-columns:1fr 1.08fr; gap:22px; margin-top:30px; align-items:start;}
+@container (max-width:820px){ .proi__grid{grid-template-columns:1fr;} }
+
+.proi__panel{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); padding:clamp(20px,2.6cqw,28px);}
+.proi__seclabel{font-family:'Poppins',sans-serif; font-weight:600; font-size:13px; color:var(--ink); display:flex; align-items:baseline; gap:8px;}
+.proi__seclabel span{font-family:'Work Sans'; font-weight:500; color:var(--muted); font-size:12.5px;}
+
+.proi__field{margin-bottom:22px;}
+.proi__fieldhead{display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:10px; gap:12px;}
+.proi__fieldlabel{font-weight:600; font-size:14.5px;}
+.proi__fieldhint{font-size:12px; color:var(--muted);}
+.proi__valuebox{display:inline-flex; align-items:center; gap:2px; background:var(--lavender-soft); border:1px solid var(--lavender); border-radius:10px; padding:4px 10px; font-family:'Poppins',sans-serif; font-weight:600; color:var(--violet); font-size:15px;}
+.proi__valuebox span{font-weight:500; color:var(--violet-2); font-size:12.5px;}
+.proi__valuebox input{width:6ch; border:none; background:transparent; font:inherit; color:var(--violet); text-align:right; padding:0; -moz-appearance:textfield;}
+.proi__valuebox input::-webkit-outer-spin-button,.proi__valuebox input::-webkit-inner-spin-button{-webkit-appearance:none;}
+.proi__valuebox input:focus{outline:none;}
+.proi__valuebox--lead{width:max-content;}
+.proi__valuebox--lead input{text-align:left; width:4ch;}
+
+input[type=range].proi__range{-webkit-appearance:none; appearance:none; width:100%; height:6px; border-radius:6px; background:linear-gradient(90deg,var(--violet) var(--fill,40%),var(--lavender) var(--fill,40%)); cursor:pointer;}
+input[type=range].proi__range::-webkit-slider-thumb{-webkit-appearance:none; width:22px; height:22px; border-radius:50%; background:#fff; border:2px solid var(--violet); box-shadow:0 2px 6px rgba(86,27,214,.35); margin-top:-1px;}
+input[type=range].proi__range::-moz-range-thumb{width:22px; height:22px; border-radius:50%; background:#fff; border:2px solid var(--violet); box-shadow:0 2px 6px rgba(86,27,214,.35);}
+input[type=range].proi__range:focus-visible{outline:2px solid var(--violet-2); outline-offset:4px;}
+.proi__ticks{display:flex; justify-content:space-between; font-size:11px; color:var(--muted); margin-top:7px;}
+
+.proi__cards{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px;}
+@container (max-width:560px){ .proi__cards{grid-template-columns:1fr;} }
+.proi__card{border:1.5px solid var(--line); border-radius:13px; padding:12px 13px; cursor:pointer; background:var(--surface); transition:border-color .18s,background .18s,box-shadow .18s; user-select:none;}
+.proi__card:hover{border-color:var(--violet-2);}
+.proi__card:focus-visible{outline:2px solid var(--violet-2); outline-offset:2px;}
+.proi__card[aria-pressed=true]{border-color:var(--violet); background:var(--lavender-soft); box-shadow:inset 0 0 0 1px var(--violet);}
+.proi__cardtop{display:flex; align-items:center; gap:9px;}
+.proi__check{flex:0 0 auto; width:19px; height:19px; border-radius:6px; border:1.5px solid #cfc7e0; display:grid; place-items:center; transition:.18s; background:#fff;}
+.proi__card[aria-pressed=true] .proi__check{background:var(--violet); border-color:var(--violet);}
+.proi__check svg{width:11px; height:11px; stroke:#fff; stroke-width:3; fill:none; opacity:0; transition:.18s;}
+.proi__card[aria-pressed=true] .proi__check svg{opacity:1;}
+.proi__cardname{font-weight:600; font-size:13.5px;}
+.proi__tierdot{font-size:9.5px; font-weight:700; letter-spacing:.03em; color:var(--violet-2); margin-left:auto; text-transform:uppercase;}
+.proi__exp{display:none; margin-top:11px; padding-top:11px; border-top:1px dashed var(--line);}
+.proi__card[aria-pressed=true] .proi__exp{display:block;}
+.proi__hrs{display:flex; align-items:center; gap:9px;}
+.proi__hrs .lab{font-size:11.5px; color:var(--muted); white-space:nowrap;}
+.proi__hrs input[type=range]{flex:1;}
+.proi__hrsval{display:inline-flex; align-items:center; gap:3px; background:#fff; border:1px solid var(--lavender); border-radius:8px; padding:2px 7px; font-family:'Poppins',sans-serif; font-weight:600; color:var(--violet); font-size:12px;}
+.proi__hrsval input{width:4.5ch; border:none; background:transparent; font:inherit; color:var(--violet); text-align:right; padding:0; -moz-appearance:textfield;}
+.proi__hrsval input::-webkit-outer-spin-button,.proi__hrsval input::-webkit-inner-spin-button{-webkit-appearance:none;}
+.proi__hrsval input:focus{outline:none;}
+.proi__hrsval small{font-weight:500; color:var(--violet-2); font-size:10px;}
+.proi__resetrow{margin-top:7px; font-size:11px; color:var(--muted); display:none; align-items:center; gap:5px;}
+.proi__resetrow.show{display:flex;}
+.proi__resetbtn{font:inherit; font-size:11px; color:var(--violet); background:none; border:none; padding:0; cursor:pointer; font-weight:600; display:inline-flex; align-items:center; gap:4px;}
+.proi__resetbtn:hover{text-decoration:underline;}
+.proi__resetbtn svg{width:11px; height:11px; stroke:currentColor; stroke-width:2; fill:none;}
+.proi__sw{margin-top:10px; display:flex; align-items:center; gap:9px; font-size:11.5px; color:var(--muted);}
+.proi__toggle{margin-left:auto; flex:0 0 auto; width:36px; height:21px; border-radius:22px; background:#d9d3e6; border:none; cursor:pointer; position:relative; transition:background .18s;}
+.proi__toggle::after{content:""; position:absolute; top:2px; left:2px; width:17px; height:17px; border-radius:50%; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.25); transition:transform .18s;}
+.proi__toggle[aria-checked=true]{background:var(--violet-2);}
+.proi__toggle[aria-checked=true]::after{transform:translateX(15px);}
+.proi__toggle:focus-visible{outline:2px solid var(--violet); outline-offset:2px;}
+
+.proi__quick{display:flex; gap:8px; flex-wrap:wrap; margin-top:14px;}
+.proi__quickbtn{font:inherit; font-size:12.5px; font-weight:500; color:var(--muted); background:none; border:1px solid var(--line); border-radius:20px; padding:5px 12px; cursor:pointer; transition:.15s;}
+.proi__quickbtn:hover{color:var(--violet); border-color:var(--violet-2);}
+
+/* ---- showcase (right) ---- */
+.proi__results{position:sticky; top:18px; background:linear-gradient(180deg,#fff 0%, var(--surface-alt) 100%);}
+.proi__showhead{display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:4px;}
+.proi__showhead h2{font-family:'Poppins',sans-serif; font-weight:700; font-size:19px; letter-spacing:-.01em;}
+.proi__showhead p{font-size:12.5px; color:var(--muted); margin-top:2px;}
+.proi__unit{display:inline-flex; background:var(--surface-alt); border:1px solid var(--line); border-radius:8px; padding:2px; flex:0 0 auto;}
+.proi__unit button{font:inherit; font-size:11.5px; font-weight:600; color:var(--muted); background:none; border:none; border-radius:6px; padding:4px 11px; cursor:pointer; transition:.15s;}
+.proi__unit button[aria-pressed=true]{background:var(--violet); color:#fff;}
+
+.proi__plans{margin-top:18px; display:flex; flex-direction:column; gap:12px;}
+.proi__plan{border:1.5px solid var(--line); border-radius:14px; padding:15px 16px; cursor:pointer; transition:border-color .18s, box-shadow .18s, background .18s; background:var(--surface);}
+.proi__plan:hover{border-color:var(--violet-2);}
+.proi__plan:focus-visible{outline:2px solid var(--violet-2); outline-offset:2px;}
+.proi__plan.best{border-color:var(--violet); box-shadow:0 0 0 1px var(--violet), 0 14px 30px -16px rgba(86,27,214,.4);}
+.proi__planrow{display:flex; align-items:baseline; justify-content:space-between; gap:10px;}
+.proi__planL{display:flex; align-items:center; gap:9px; min-width:0;}
+.proi__planname{font-family:'Poppins',sans-serif; font-weight:600; font-size:15.5px;}
+.proi__bestbadge{font-size:10px; font-weight:700; letter-spacing:.03em; text-transform:uppercase; color:#fff; background:linear-gradient(135deg,var(--violet),var(--violet-2)); border-radius:20px; padding:2px 8px; display:none;}
+.proi__plan.best .proi__bestbadge{display:inline-block;}
+.proi__planprice{font-size:12px; color:var(--muted); font-weight:500; white-space:nowrap;}
+.proi__planprice b{color:var(--ink); font-family:'Poppins',sans-serif; font-weight:600;}
+.proi__bigrow{display:flex; align-items:flex-end; gap:8px; margin-top:9px;}
+.proi__bigval{font-family:'Poppins',sans-serif; font-weight:700; font-size:30px; line-height:1; color:var(--violet); letter-spacing:-.02em; font-variant-numeric:tabular-nums;}
+.proi__bigunit{font-size:12.5px; color:var(--muted); font-weight:500; padding-bottom:2px;}
+.proi__bigyear{margin-left:auto; font-size:12px; color:var(--muted); padding-bottom:2px; text-align:right;}
+.proi__bigyear b{color:var(--ink); font-family:'Poppins',sans-serif; font-weight:600;}
+.proi__ptrack{height:16px; border-radius:8px; background:var(--surface-alt); border:1px solid var(--line); overflow:hidden; display:flex; margin-top:10px;}
+.proi__ptrack .base{height:100%; background:linear-gradient(90deg,#c9b6f5,#b79ef0); transition:width .6s cubic-bezier(.4,0,.1,1);}
+.proi__ptrack .inc{height:100%; background:linear-gradient(90deg,var(--violet),var(--violet-2)); transition:width .6s cubic-bezier(.4,0,.1,1); position:relative;}
+.proi__pmeta{display:flex; align-items:center; gap:8px; margin-top:9px; font-size:12px; flex-wrap:wrap;}
+.proi__unlock{color:var(--violet); font-weight:600; display:inline-flex; align-items:center; gap:4px;}
+.proi__unlock.muted{color:#b3aac6;}
+.proi__unlock svg{width:12px; height:12px; stroke:currentColor; stroke-width:2.4; fill:none;}
+.proi__pnet{margin-left:auto; font-weight:600; font-family:'Poppins',sans-serif; font-variant-numeric:tabular-nums;}
+.proi__pnet.pos{color:var(--ok);} .proi__pnet.neg{color:var(--bad);}
+.proi__pcar{font-size:11px; color:#bcb3d2; transition:transform .2s;}
+.proi__plan.open .proi__pcar{transform:rotate(180deg); color:var(--violet);}
+.proi__pexp{display:none; margin-top:12px; padding-top:12px; border-top:1px solid var(--line);}
+.proi__plan.open .proi__pexp{display:block;}
+.proi__upnote{font-size:12px; color:var(--ink); background:var(--lavender-soft); border:1px solid var(--lavender); border-radius:9px; padding:8px 11px; margin-bottom:10px;}
+.proi__upnote b{color:var(--violet); font-weight:600;}
+.proi__pexp .lead{font-size:11.5px; color:var(--muted); margin-bottom:7px;}
+.proi__arealist{display:flex; flex-direction:column; gap:6px;}
+.proi__arearow{display:grid; grid-template-columns:1fr auto; gap:8px; font-size:12.5px; align-items:center;}
+.proi__arearow .an{color:var(--ink);}
+.proi__arearow .an small{color:#b3aac6; margin-left:6px; font-size:10.5px;}
+.proi__arearow .av{font-family:'Poppins',sans-serif; font-weight:600; color:var(--violet); font-variant-numeric:tabular-nums;}
+.proi__areanone{font-size:12px; color:var(--muted); font-style:italic;}
+
+.proi__cta{margin-top:20px; display:flex; flex-direction:column; gap:9px;}
+.proi__btn{font:inherit; font-family:'Poppins',sans-serif; font-weight:600; font-size:15px; background:var(--violet); color:#fff; border:none; border-radius:11px; padding:14px; cursor:pointer; text-align:center; text-decoration:none; transition:background .18s;}
+.proi__btn:hover{background:var(--violet-deep);}
+.proi__btn:focus-visible{outline:2px solid var(--violet-2); outline-offset:3px;}
+.proi__finefoot{font-size:11.5px; color:var(--muted); text-align:center; line-height:1.45;}
+.proi__estimate{margin-top:20px; font-size:12px; color:var(--muted); text-align:center;}
+
+@media (prefers-reduced-motion:reduce){ .proi__ptrack .base,.proi__ptrack .inc{transition:none;} }
+</style>
+
+<div class="proi">
+ <div class="proi__shell">
+
+  <header>
+    <div class="proi__eyebrow">Propra ROI Calculator</div>
+    <h1 class="proi__title">See how much time <em>each plan</em> gives back.</h1>
+    <p class="proi__lede">Set your portfolio and the areas eating your week. Watch how many hours Essentials, Professional, and Enterprise each reclaim — and what every upgrade unlocks.</p>
+  </header>
+
+  <div class="proi__grid">
+
+    <!-- INPUTS -->
+    <section class="proi__panel" aria-label="Your business">
+      <div class="proi__field">
+        <div class="proi__fieldhead">
+          <div><label class="proi__fieldlabel" for="proi-doors">Doors you manage</label>
+          <div class="proi__fieldhint">Scales plan pricing and time estimates</div></div>
+          <div class="proi__valuebox"><input id="proi-doors" type="number" min="1" max="5000" value="100" inputmode="numeric" aria-label="Doors managed"></div>
+        </div>
+        <input class="proi__range" id="proi-doors-range" type="range" min="0" max="1000" step="1" value="0" aria-label="Doors managed slider">
+        <div class="proi__ticks"><span>5</span><span>~150</span><span>1,000</span><span>5,000</span></div>
+      </div>
+
+      <div class="proi__field">
+        <div class="proi__fieldhead">
+          <div><label class="proi__fieldlabel" for="proi-wage">Average hourly wage</label>
+          <div class="proi__fieldhint">Loaded cost of the person doing this admin</div></div>
+          <div class="proi__valuebox proi__valuebox--lead">$<input id="proi-wage" type="number" min="1" max="200" value="28" inputmode="numeric" aria-label="Average hourly wage"><span>/hr</span></div>
+        </div>
+      </div>
+
+      <div class="proi__field" style="margin-bottom:0">
+        <div class="proi__seclabel">What's eating your week? <span>tap to include &amp; set hours</span></div>
+        <div class="proi__cards" id="proi-cards"></div>
+        <div class="proi__quick">
+          <button class="proi__quickbtn" data-quick="all" type="button">Select all</button>
+          <button class="proi__quickbtn" data-quick="common" type="button">Most common</button>
+          <button class="proi__quickbtn" data-quick="none" type="button">Clear</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- SHOWCASE -->
+    <section class="proi__panel proi__results" aria-label="Time saved by plan" aria-live="polite">
+      <div class="proi__showhead">
+        <div>
+          <h2>Hours each plan gives back</h2>
+          <p id="proi-showsub">Reclaimed admin time for your portfolio, per plan.</p>
+        </div>
+        <span class="proi__unit" role="group" aria-label="Show in hours or dollars">
+          <button id="proi-unit-time" type="button" aria-pressed="true">hrs</button>
+          <button id="proi-unit-money" type="button" aria-pressed="false">$</button>
+        </span>
+      </div>
+
+      <div class="proi__plans" id="proi-plans"></div>
+
+      <div class="proi__cta">
+        <a class="proi__btn" id="proi-demo" href="https://propra.tech/#cta" target="_blank" rel="noopener">Book a demo to lock these in</a>
+        <div class="proi__finefoot">Tap any plan to see exactly what it automates.</div>
+      </div>
+    </section>
+  </div>
+
+  <p class="proi__estimate">All numbers are estimates.</p>
+
+ </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var DEFAULTS = {
+    doors:100, wage:28, saveBase:0.20, saveHasSoftware:0.10,
+    A:{ bankLines:3, bills:1.5, recAcct:3, doorsPerOwner:3, tenants:1, nsf:0.05, inspMo:4/12,
+        inspMaint:0.3, amort:36, maintReq:0.5, dispute:0.02, leaseEvt:0.0833, applicants:5, mTurn:0.25/12 }
+  };
+  // Per-door monthly pricing (Value creation tab). SET ME if list price changes.
+  var PRICING = { tiers:{ 2:{name:"Essentials",perDoor:3}, 3:{name:"Professional",perDoor:5}, 4:{name:"Enterprise",perDoor:20} } };
+  function tierCost(rank, doors){ return PRICING.tiers[rank].perDoor * doors; }
+
+  // what each tier ADDS on top of the previous (for the "unlocks" label)
+  var TIER_UNLOCK = { 2:"Core automations", 3:"+ Rent Collection", 4:"+ Owner Reports" };
+  var PLAN_ORDER = [2,3,4];
+
+  var CATS = [
+    { id:"accounting", name:"Accounting", minTier:2, common:true,
+      tasks:["Bank reconciliation","GST remittance","Trust reconciliation","Owner statements","Bill scanning"] },
+    { id:"maintenance", name:"Maintenance", minTier:2, common:true,
+      tasks:["Operator app","AI categorization","Work-order assignment","Contractor comms"] },
+    { id:"leases", name:"Leases & Renewals", minTier:2, common:true,
+      tasks:["Digital lease creation","Signature gathering","Renewal reminders","Move-in / out"] },
+    { id:"inspections", name:"Inspections", minTier:2, common:false,
+      tasks:["Templates & scheduling","Photos & signatures","Auto PDF to tenant","Post-inspection requests"] },
+    { id:"listings", name:"Listings", minTier:2, common:false,
+      tasks:["Listing API posting","Vacancy campaigns","Application review","Tenant screening"] },
+    { id:"rent", name:"Rent Collection", minTier:3, common:true,
+      tasks:["Automated rent roll","Autopay & PAD setup","NSF handling","Late-fee automation"] },
+    { id:"reports", name:"Reports", minTier:4, common:false,
+      tasks:["Portfolio reporting","One-click owner sharing","Disbursement reports","Month-end statements"] }
+  ];
+  function catById(id){ for(var i=0;i<CATS.length;i++) if(CATS[i].id===id) return CATS[i]; }
+
+  function benchMin(id, N, A){
+    switch(id){
+      case "accounting":  return 1*N+1*N+0.5*N*A.bankLines+60+2*N+1*N+3*N*A.bills+2*N*A.bills+5*N*A.recAcct+3*(N/A.doorsPerOwner)+120+90;
+      case "rent":        return 1*N+1*N+120+960+10+2*N*A.tenants+60+5*N*A.nsf+10*N*A.mTurn;
+      case "maintenance": return 10*N*A.maintReq+780+5*N*A.maintReq+5*N*A.maintReq+5*N*A.maintReq+10*N*A.dispute+5*N*A.maintReq;
+      case "inspections": return 17.5*N*A.inspMo+10*N*A.inspMo*A.inspMaint+20*N/A.amort+5*N*A.inspMo+10*N*A.inspMo+5*N*A.inspMo;
+      case "leases":      return 120*N*A.leaseEvt+10*N*A.leaseEvt+15*N*A.leaseEvt+5*N*A.leaseEvt+20*N*A.mTurn;
+      case "reports":     return 1*N+60+2*(N/A.doorsPerOwner)+90+3*(N/A.doorsPerOwner);
+      case "listings":    return 650+15*N*A.mTurn+10*N*A.mTurn*A.applicants+10*N*A.mTurn+20*N*A.mTurn*A.applicants+5*N*A.mTurn*A.applicants;
+    }
+    return 0;
+  }
+  function benchHours(id, N){ return Math.round(benchMin(id,N,DEFAULTS.A)/60*10)/10; }
+  function need(cat){ return Math.max(2, cat.minTier); }
+
+  var $ = function(s,r){ return (r||document).querySelector(s); };
+  var reduce = window.matchMedia && matchMedia("(prefers-reduced-motion:reduce)").matches;
+
+  var state={}; CATS.forEach(function(c){ state[c.id]={ selected:false, hasSoftware:false, hours:benchHours(c.id,100), edited:false }; });
+  var planOpen={2:false,3:false,4:false};
+  var doors=DEFAULTS.doors, wage=DEFAULTS.wage, unit="time";
+
+  function catResult(c){
+    var st=state[c.id], cur=st.hours, f=st.hasSoftware?DEFAULTS.saveHasSoftware:DEFAULTS.saveBase, hrs=cur*f;
+    return { id:c.id, name:c.name, need:need(c), hasSoftware:st.hasSoftware, curHrs:cur, hrs:hrs, dollars:hrs*wage };
+  }
+
+  function money(n){ return "$"+Math.round(n).toLocaleString("en-CA"); }
+  function hrs1(n){ return (Math.round(n*10)/10).toLocaleString("en-CA"); }
+  function intc(n){ return Math.round(n).toLocaleString("en-CA"); }
+
+  // ---- cards ----
+  var cardsWrap=$("#proi-cards");
+  CATS.forEach(function(c){
+    var card=document.createElement("div");
+    card.className="proi__card"; card.setAttribute("role","button"); card.setAttribute("tabindex","0");
+    card.setAttribute("aria-pressed","false"); card.dataset.id=c.id;
+    var tierName = PRICING.tiers[need(c)].name;
+    card.innerHTML=
+      '<div class="proi__cardtop">'+
+        '<span class="proi__check"><svg viewBox="0 0 14 14"><polyline points="2,7 6,11 12,3"></polyline></svg></span>'+
+        '<span class="proi__cardname">'+c.name+'</span>'+
+        '<span class="proi__tierdot">'+tierName+'</span>'+
+      '</div>'+
+      '<div class="proi__exp">'+
+        '<div class="proi__hrs"><span class="lab">Time it eats now</span>'+
+          '<input type="range" class="proi__range" data-hrange step="0.5" aria-label="Hours per month for '+c.name+'">'+
+          '<span class="proi__hrsval"><input type="number" data-hnum min="0" max="9999" inputmode="decimal" aria-label="Hours per month for '+c.name+'"><small>hrs/mo</small></span>'+
+        '</div>'+
+        '<div class="proi__resetrow" data-resetrow>Custom —'+
+          '<button class="proi__resetbtn" data-reset type="button"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"></path><path d="M3 4v4h4"></path></svg>reset to estimate (<span data-est></span> hrs)</button>'+
+        '</div>'+
+        '<div class="proi__sw">I already use software here'+
+          '<button class="proi__toggle" type="button" role="switch" aria-checked="false" aria-label="Already using software for '+c.name+'"></button>'+
+        '</div>'+
+      '</div>';
+    cardsWrap.appendChild(card);
+
+    var hRange=card.querySelector("[data-hrange]"), hNum=card.querySelector("[data-hnum]"),
+        tog=card.querySelector(".proi__toggle"), resetRow=card.querySelector("[data-resetrow]"),
+        resetBtn=card.querySelector("[data-reset]"), estSpan=card.querySelector("[data-est]");
+    function sync(){
+      var st=state[c.id], bm=benchHours(c.id,doors);
+      var mx=Math.max(60, Math.ceil(bm*2/10)*10, Math.ceil(st.hours/10)*10);
+      hRange.max=mx; hRange.step=mx>300?1:0.5; hRange.value=st.hours; hNum.value=st.hours;
+      hRange.style.setProperty("--fill", (st.hours/mx*100)+"%"); estSpan.textContent=bm;
+      resetRow.classList.toggle("show", st.edited);
+    }
+    card._sync=sync; sync();
+    function sel(){ var st=state[c.id]; st.selected=!st.selected; card.setAttribute("aria-pressed",st.selected?"true":"false"); render(); }
+    card.addEventListener("click", function(e){ if(e.target.closest(".proi__exp")) return; sel(); });
+    card.addEventListener("keydown", function(e){ if(e.target.closest(".proi__exp")) return; if(e.key===" "||e.key==="Enter"){ e.preventDefault(); sel(); } });
+    function setHours(v){ v=Math.max(0,Math.min(9999,v||0)); state[c.id].hours=v; state[c.id].edited=true; sync(); render(); }
+    hRange.addEventListener("input", function(){ setHours(+hRange.value); });
+    hNum.addEventListener("input", function(){ setHours(+hNum.value); });
+    resetBtn.addEventListener("click", function(e){ e.stopPropagation(); state[c.id].hours=benchHours(c.id,doors); state[c.id].edited=false; sync(); render(); });
+    tog.addEventListener("click", function(e){ e.stopPropagation(); var st=state[c.id]; st.hasSoftware=!st.hasSoftware; tog.setAttribute("aria-checked",st.hasSoftware?"true":"false"); render(); });
+  });
+
+  // ---- doors log slider ----
+  var doorsNum=$("#proi-doors"), doorsRange=$("#proi-doors-range"), wageNum=$("#proi-wage");
+  var LMIN=Math.log(5), LMAX=Math.log(5000);
+  function posToDoors(pos){ var d=Math.exp(LMIN+(pos/1000)*(LMAX-LMIN)); d=d<100?Math.round(d):d<1000?Math.round(d/5)*5:Math.round(d/25)*25; return Math.max(5,Math.min(5000,d)); }
+  function doorsToPos(d){ return Math.round((Math.log(Math.max(5,Math.min(5000,d)))-LMIN)/(LMAX-LMIN)*1000); }
+  function refreshDefaults(){ CATS.forEach(function(c){ if(!state[c.id].edited){ state[c.id].hours=benchHours(c.id,doors); } var card=cardsWrap.querySelector('[data-id="'+c.id+'"]'); if(card._sync) card._sync(); }); }
+  function applyDoors(v){ doors=Math.max(1,Math.min(5000,Math.round(v||0))); doorsNum.value=doors;
+    var pos=doorsToPos(doors); doorsRange.value=pos; doorsRange.style.setProperty("--fill",(pos/10)+"%"); refreshDefaults(); render(); }
+  doorsRange.addEventListener("input", function(){ applyDoors(posToDoors(+doorsRange.value)); });
+  doorsNum.addEventListener("input", function(){ applyDoors(+doorsNum.value); });
+  wageNum.addEventListener("input", function(){ wage=Math.max(1,Math.min(500,+wageNum.value||0)); render(); });
+
+  var uTime=$("#proi-unit-time"), uMoney=$("#proi-unit-money");
+  uTime.addEventListener("click", function(){ unit="time"; uTime.setAttribute("aria-pressed","true"); uMoney.setAttribute("aria-pressed","false"); render(); });
+  uMoney.addEventListener("click", function(){ unit="money"; uMoney.setAttribute("aria-pressed","true"); uTime.setAttribute("aria-pressed","false"); render(); });
+
+  document.querySelectorAll(".proi__quickbtn").forEach(function(b){
+    b.addEventListener("click", function(){
+      var m=b.dataset.quick;
+      CATS.forEach(function(c){
+        var s = m==="all"?true : m==="none"?false : m==="common"?!!c.common : state[c.id].selected;
+        state[c.id].selected=s;
+        cardsWrap.querySelector('[data-id="'+c.id+'"]').setAttribute("aria-pressed",s?"true":"false");
+      });
+      render();
+    });
+  });
+
+  // ---- build plan bars ----
+  var plansWrap=$("#proi-plans");
+  PLAN_ORDER.forEach(function(T){
+    var el=document.createElement("div");
+    el.className="proi__plan"; el.dataset.tier=T; el.setAttribute("role","button"); el.setAttribute("tabindex","0");
+    el.innerHTML=
+      '<div class="proi__planrow">'+
+        '<div class="proi__planL"><span class="proi__planname">'+PRICING.tiers[T].name+'</span><span class="proi__bestbadge">Best value</span></div>'+
+        '<div class="proi__planprice"><b data-price>$0</b>/mo · <span data-perdoor>$'+PRICING.tiers[T].perDoor+'</span>/door</div>'+
+      '</div>'+
+      '<div class="proi__bigrow"><span class="proi__bigval" data-big>0</span><span class="proi__bigunit" data-bigunit>hrs / mo</span>'+
+        '<span class="proi__bigyear" data-year></span></div>'+
+      '<div class="proi__ptrack"><i class="base" data-base style="width:0%"></i><i class="inc" data-inc style="width:0%"></i></div>'+
+      '<div class="proi__pmeta">'+
+        '<span class="proi__unlock" data-unlock></span>'+
+        '<span class="proi__pnet" data-net></span>'+
+        '<span class="proi__pcar" data-car>&#9660;</span>'+
+      '</div>'+
+      '<div class="proi__pexp" data-exp></div>';
+    plansWrap.appendChild(el);
+    function toggleOpen(){ planOpen[T]=!planOpen[T]; el.classList.toggle("open",planOpen[T]); }
+    el.addEventListener("click", toggleOpen);
+    el.addEventListener("keydown", function(e){ if(e.key===" "||e.key==="Enter"){ e.preventDefault(); toggleOpen(); } });
+  });
+
+  function render(){
+    var sel = CATS.filter(function(c){return state[c.id].selected;}).map(catResult);
+
+    // cumulative saved per tier (hrs & $) + cost + net
+    var cum={};
+    PLAN_ORDER.forEach(function(T){
+      var cov=sel.filter(function(r){return r.need<=T;});
+      cum[T]={ hrs:cov.reduce(function(a,r){return a+r.hrs;},0),
+               dollars:cov.reduce(function(a,r){return a+r.dollars;},0),
+               cost:tierCost(T,doors) };
+      cum[T].net=cum[T].dollars-cum[T].cost;
+    });
+    var maxVal = unit==="time"? cum[4].hrs : cum[4].dollars;
+    maxVal = maxVal>0? maxVal : 1;
+
+    // best value = highest net that is >= 0 (else none)
+    var best=null;
+    PLAN_ORDER.forEach(function(T){ if(cum[T].net>=0 && (best===null || cum[T].net>cum[best].net)) best=T; });
+
+    // subtitle
+    var sub=$("#proi-showsub");
+    sub.textContent = sel.length? ("Up to "+intc(cum[4].hrs*12)+" hrs a year across "+sel.length+" area"+(sel.length>1?"s":"")+" — see each plan below.")
+                                : "Pick the areas eating your week to compare plans.";
+
+    PLAN_ORDER.forEach(function(T,i){
+      var el=plansWrap.querySelector('[data-tier="'+T+'"]');
+      var prevT = i>0? PLAN_ORDER[i-1] : null;
+      var val = unit==="time"? cum[T].hrs : cum[T].dollars;
+      var prevVal = prevT? (unit==="time"? cum[prevT].hrs : cum[prevT].dollars) : 0;
+      var incVal = Math.max(0, val - prevVal);
+
+      el.classList.toggle("best", best===T);
+      el.querySelector("[data-price]").textContent = money(cum[T].cost);
+      // big number
+      el.querySelector("[data-big]").textContent = unit==="time"? hrs1(cum[T].hrs) : money(cum[T].dollars);
+      el.querySelector("[data-bigunit]").textContent = unit==="time"? "hrs / mo" : "saved / mo";
+      el.querySelector("[data-year]").innerHTML = unit==="time"
+        ? '<b>'+intc(cum[T].hrs*12)+'</b> hrs/yr'
+        : '<b>'+money(cum[T].dollars*12)+'</b>/yr';
+      // bar: base (shared with lower tier) + increment (this tier adds)
+      el.querySelector("[data-base]").style.width = (prevVal/maxVal*100)+"%";
+      el.querySelector("[data-inc]").style.width  = (incVal/maxVal*100)+"%";
+      // unlock label
+      var addsAreas = sel.filter(function(r){return r.need===T;});
+      var unlockEl=el.querySelector("[data-unlock]");
+      if(T===2){ unlockEl.className="proi__unlock"; unlockEl.innerHTML=iconPlus()+"Core automations"; }
+      else {
+        var addName = TIER_UNLOCK[T].replace("+ ","");
+        var active = addsAreas.length>0;
+        unlockEl.className="proi__unlock"+(active?"":" muted");
+        unlockEl.innerHTML=iconPlus()+addName+(active? "" : " (not selected)");
+      }
+      // net
+      var netEl=el.querySelector("[data-net]");
+      if(sel.length){ netEl.className="proi__pnet "+(cum[T].net>=0?"pos":"neg");
+        netEl.textContent=(cum[T].net>=0?"nets ":"costs ")+money(Math.abs(cum[T].net))+"/mo"; }
+      else netEl.textContent="";
+      // expand
+      el.querySelector("[data-exp]").innerHTML = expandHtml(T, prevT, cum, sel);
+    });
+  }
+
+  function iconPlus(){ return '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>'; }
+
+  function expandHtml(T, prevT, cum, sel){
+    var covered = sel.filter(function(r){return r.need<=T;}).sort(function(a,b){return b.hrs-a.hrs;});
+    var html="";
+    if(prevT){
+      var dHrs=Math.max(0,cum[T].hrs-cum[prevT].hrs), dCost=cum[T].cost-cum[prevT].cost;
+      if(dHrs>0.05){
+        html+='<div class="proi__upnote">Upgrading from '+PRICING.tiers[prevT].name+' adds <b>'+hrs1(dHrs)+' hrs/mo</b> ('+money(dHrs*wage)+'/mo) for <b>+'+money(dCost)+'/mo</b>.</div>';
+      } else {
+        html+='<div class="proi__upnote">No extra time vs '+PRICING.tiers[prevT].name+' yet — select a '+PRICING.tiers[T].name+' area to unlock more.</div>';
+      }
+    }
+    html+='<div class="lead">'+PRICING.tiers[T].name+' automates:</div>';
+    if(!covered.length){ html+='<div class="proi__areanone">No selected areas yet.</div>'; return html; }
+    html+='<div class="proi__arealist">';
+    covered.forEach(function(r){
+      var v = unit==="time"? hrs1(r.hrs)+" h" : money(r.dollars);
+      var swtag = r.hasSoftware? '<small>10% (has software)</small>' : '';
+      html+='<div class="proi__arearow"><span class="an">'+r.name+swtag+'</span><span class="av">'+v+'</span></div>';
+    });
+    html+='</div>';
+    return html;
+  }
+
+  // init: select all so all three plans compare out of the box
+  CATS.forEach(function(c){ state[c.id].selected=true; cardsWrap.querySelector('[data-id="'+c.id+'"]').setAttribute("aria-pressed","true"); });
+  applyDoors(DEFAULTS.doors);
+})();
+</script>
