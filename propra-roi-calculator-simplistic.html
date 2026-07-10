@@ -1,0 +1,268 @@
+<!--
+  PROPRA — TIME YOU GET BACK  (interactive one-pager, v9)
+  Simple visual result (v8) + feature selection (click to include), a typeable
+  doors input, and the doors-absorbed capacity number. Fixed at $30/hr; savings
+  = 20% of the hours on selected features. #proi-demo href = SET ME.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+.proi{
+  --violet:#561BD6; --violet-deep:#4316ad; --violet-2:#9F78FA;
+  --lavender:#ECE4FE; --lavender-soft:#F5F0FE;
+  --ink:#1A1A1A; --muted:#666666; --line:#ECEAF1;
+  --surface:#FFFFFF; --surface-alt:#FAFAFA;
+  --shadow:0 1px 2px rgba(26,16,52,.04), 0 12px 32px -12px rgba(86,27,214,.18);
+  --radius:18px;
+  font-family:'Work Sans','Avenir Next','Segoe UI',sans-serif; color:var(--ink);
+  background:radial-gradient(120% 80% at 100% 0%, var(--lavender-soft) 0%, transparent 55%), var(--surface-alt);
+  line-height:1.5; -webkit-font-smoothing:antialiased;
+  padding:clamp(16px,3vw,40px); display:flex; justify-content:center; container-type:inline-size;
+}
+.proi *{box-sizing:border-box; margin:0;}
+.proi__shell{width:100%; max-width:1000px;}
+
+.proi__eyebrow{font-size:12.5px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--violet); display:flex; align-items:center; gap:9px; margin-bottom:14px;}
+.proi__eyebrow::before{content:""; width:22px; height:2px; background:var(--violet); border-radius:2px;}
+.proi__title{font-family:'Poppins',sans-serif; font-weight:700; letter-spacing:-.02em; font-size:clamp(26px,4.4cqw,40px); line-height:1.08; max-width:16ch;}
+.proi__title em{font-style:normal; color:var(--violet); position:relative; white-space:nowrap;}
+.proi__title em::after{content:""; position:absolute; left:0; right:0; bottom:.06em; height:.34em; background:var(--lavender); z-index:-1; border-radius:3px;}
+.proi__lede{color:var(--muted); font-size:clamp(14.5px,1.6cqw,16px); max-width:48ch; margin-top:12px;}
+
+.proi__grid{display:grid; grid-template-columns:1fr 1fr; gap:22px; margin-top:30px; align-items:start;}
+@container (max-width:780px){ .proi__grid{grid-template-columns:1fr;} }
+
+.proi__panel{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); padding:clamp(22px,2.8cqw,30px);}
+
+/* doors input */
+.proi__field{margin-bottom:24px;}
+.proi__fieldhead{display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:10px; gap:12px;}
+.proi__fieldlabel{font-weight:600; font-size:14.5px;}
+.proi__fieldhint{font-size:12px; color:var(--muted);}
+.proi__valuebox{display:inline-flex; align-items:center; background:var(--lavender-soft); border:1px solid var(--lavender); border-radius:10px; padding:4px 12px; font-family:'Poppins',sans-serif; font-weight:600; color:var(--violet); font-size:16px;}
+.proi__valuebox input{width:6ch; border:none; background:transparent; font:inherit; color:var(--violet); text-align:right; padding:0; -moz-appearance:textfield;}
+.proi__valuebox input::-webkit-outer-spin-button,.proi__valuebox input::-webkit-inner-spin-button{-webkit-appearance:none;}
+.proi__valuebox input:focus{outline:none;}
+.proi__ticks{display:flex; justify-content:space-between; font-size:11px; color:var(--muted); margin-top:7px;}
+
+input[type=range].proi__range{-webkit-appearance:none; appearance:none; width:100%; height:7px; border-radius:7px; background:linear-gradient(90deg,var(--violet) var(--fill,40%),var(--lavender) var(--fill,40%)); cursor:pointer;}
+input[type=range].proi__range::-webkit-slider-thumb{-webkit-appearance:none; width:22px; height:22px; border-radius:50%; background:#fff; border:2px solid var(--violet); box-shadow:0 2px 6px rgba(86,27,214,.35);}
+input[type=range].proi__range::-moz-range-thumb{width:22px; height:22px; border-radius:50%; background:#fff; border:2px solid var(--violet); box-shadow:0 2px 6px rgba(86,27,214,.35);}
+input[type=range].proi__range:focus-visible{outline:2px solid var(--violet-2); outline-offset:4px;}
+
+.proi__seclabel{font-family:'Poppins',sans-serif; font-weight:600; font-size:13px; color:var(--ink); display:flex; align-items:baseline; gap:8px; margin-bottom:12px;}
+.proi__seclabel span{font-family:'Work Sans'; font-weight:500; color:var(--muted); font-size:12.5px;}
+
+/* feature cards (click to include) */
+.proi__cards{display:flex; flex-direction:column; gap:10px;}
+.proi__card{border:1.5px solid var(--line); border-radius:13px; padding:13px 15px; cursor:pointer; background:var(--surface); transition:border-color .18s,background .18s,box-shadow .18s; user-select:none;}
+.proi__card:hover{border-color:var(--violet-2);}
+.proi__card:focus-visible{outline:2px solid var(--violet-2); outline-offset:2px;}
+.proi__card[aria-pressed=true]{border-color:var(--violet); background:var(--lavender-soft); box-shadow:inset 0 0 0 1px var(--violet);}
+.proi__cardtop{display:flex; align-items:center; gap:11px;}
+.proi__check{flex:0 0 auto; width:20px; height:20px; border-radius:6px; border:1.5px solid #cfc7e0; display:grid; place-items:center; transition:.18s; background:#fff;}
+.proi__card[aria-pressed=true] .proi__check{background:var(--violet); border-color:var(--violet);}
+.proi__check svg{width:12px; height:12px; stroke:#fff; stroke-width:3; fill:none; opacity:0; transition:.18s;}
+.proi__card[aria-pressed=true] .proi__check svg{opacity:1;}
+.proi__cardname{font-weight:600; font-size:14.5px;}
+.proi__cardhrs{margin-left:auto; font-family:'Poppins',sans-serif; font-weight:600; font-size:13.5px; color:var(--violet); opacity:0; transition:.18s; font-variant-numeric:tabular-nums; white-space:nowrap;}
+.proi__cardhrs small{color:var(--muted); font-weight:500; font-size:11.5px; margin-left:2px;}
+.proi__card[aria-pressed=true] .proi__cardhrs{opacity:1;}
+.proi__exp{display:none; margin-top:13px;}
+.proi__card[aria-pressed=true] .proi__exp{display:block;}
+.proi__explab{font-size:12px; color:var(--muted); margin-bottom:8px;}
+
+/* result */
+.proi__result{background:linear-gradient(160deg,#fff 0%, var(--surface-alt) 100%); text-align:center; position:sticky; top:18px;}
+.proi__result h2{font-family:'Poppins',sans-serif; font-weight:600; font-size:16px; margin-bottom:18px;}
+.proi__ring{position:relative; width:220px; height:220px; margin:0 auto;}
+.proi__ring svg{width:220px; height:220px; transform:rotate(-90deg);}
+.proi__ring circle{fill:none; stroke-width:20;}
+.proi__ring .track{stroke:var(--lavender);}
+.proi__ring .arc{stroke:url(#proiGrad); stroke-linecap:round; transition:stroke-dashoffset .7s cubic-bezier(.4,0,.1,1);}
+.proi__ringctr{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;}
+.proi__ringctr b{font-family:'Poppins',sans-serif; font-weight:700; font-size:46px; color:var(--violet); line-height:1; letter-spacing:-.02em; font-variant-numeric:tabular-nums;}
+.proi__ringctr span{font-size:13px; color:var(--muted); margin-top:6px; font-weight:500;}
+
+.proi__stats{margin-top:20px; display:flex; flex-direction:column; gap:4px;}
+.proi__statbig{font-family:'Poppins',sans-serif; font-weight:600; font-size:19px;}
+.proi__statbig b{color:var(--violet);}
+.proi__statsub{font-size:14px; color:var(--muted);}
+.proi__statsub b{color:var(--ink); font-weight:600;}
+
+.proi__chip{margin-top:18px; display:flex; align-items:center; gap:12px; text-align:left; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:12px 14px;}
+.proi__chip .ic{flex:0 0 auto; width:36px; height:36px; border-radius:10px; background:var(--lavender-soft); display:grid; place-items:center; color:var(--violet);}
+.proi__chip .ic svg{width:19px; height:19px; stroke:currentColor; stroke-width:1.9; fill:none;}
+.proi__chip .tx b{font-family:'Poppins',sans-serif; font-weight:600; font-size:16px; display:block; line-height:1.1;}
+.proi__chip .tx span{font-size:12px; color:var(--muted); display:block; margin-top:2px;}
+
+.proi__btn{margin-top:20px; display:block; font:inherit; font-family:'Poppins',sans-serif; font-weight:600; font-size:15px; background:var(--violet); color:#fff; border:none; border-radius:11px; padding:14px; cursor:pointer; text-align:center; text-decoration:none; transition:background .18s;}
+.proi__btn:hover{background:var(--violet-deep);}
+.proi__btn:focus-visible{outline:2px solid var(--violet-2); outline-offset:3px;}
+.proi__foot{margin-top:14px; font-size:11.5px; color:var(--muted); line-height:1.5;}
+
+@media (prefers-reduced-motion:reduce){ .proi__ring .arc{transition:none;} }
+</style>
+
+<div class="proi">
+ <div class="proi__shell">
+
+  <header>
+    <div class="proi__eyebrow">Propra ROI Calculator</div>
+    <h1 class="proi__title">See the time you <em>get back</em>.</h1>
+    <p class="proi__lede">Pick the tasks eating your week and set the hours each takes. We'll show the time automation gives back.</p>
+  </header>
+
+  <div class="proi__grid">
+
+    <!-- INPUTS -->
+    <section class="proi__panel" aria-label="Your business">
+      <div class="proi__field">
+        <div class="proi__fieldhead">
+          <div><label class="proi__fieldlabel" for="proi-doors">Doors you manage</label>
+          <div class="proi__fieldhint">Type it in or use the slider</div></div>
+          <div class="proi__valuebox"><input id="proi-doors" type="number" min="1" max="5000" value="100" inputmode="numeric" aria-label="Doors managed"></div>
+        </div>
+        <input class="proi__range" id="proi-doors-range" type="range" min="0" max="1000" step="1" value="0" aria-label="Doors managed slider">
+        <div class="proi__ticks"><span>5</span><span>~150</span><span>1,000</span><span>5,000</span></div>
+      </div>
+
+      <div class="proi__seclabel">What's eating your week? <span>tap to include</span></div>
+      <div class="proi__cards" id="proi-cards"></div>
+    </section>
+
+    <!-- RESULT -->
+    <section class="proi__panel proi__result" aria-label="Time you get back" aria-live="polite">
+      <h2>The time you get back</h2>
+      <div class="proi__ring">
+        <svg viewBox="0 0 220 220">
+          <defs><linearGradient id="proiGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#561BD6"/><stop offset="1" stop-color="#9F78FA"/></linearGradient></defs>
+          <circle class="track" cx="110" cy="110" r="90"></circle>
+          <circle class="arc" id="proi-arc" cx="110" cy="110" r="90"></circle>
+        </svg>
+        <div class="proi__ringctr"><b id="proi-hrs">0</b><span>hours a month</span></div>
+      </div>
+      <div class="proi__stats">
+        <div class="proi__statbig"><b id="proi-hrsyear">0</b> hours a year</div>
+        <div class="proi__statsub">worth about <b id="proi-money">$0</b> a month</div>
+      </div>
+
+      <div class="proi__chip">
+        <span class="ic"><svg viewBox="0 0 24 24"><path d="M3 21h18"></path><path d="M5 21V8l7-4 7 4v13"></path><path d="M9 21v-5h6v5"></path></svg></span>
+        <span class="tx"><b id="proi-extradoors">0 doors</b><span>extra capacity from freed hours — grow without hiring</span></span>
+      </div>
+
+      <a class="proi__btn" id="proi-demo" href="https://propra.tech/#cta" target="_blank" rel="noopener">Book a demo</a>
+      <div class="proi__foot">All numbers are estimates, calculated at $30/hour.</div>
+    </section>
+  </div>
+
+ </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var WAGE=30;
+  var A={ bankLines:3, bills:1.5, recAcct:3, doorsPerOwner:3, tenants:1, nsf:0.05, inspMo:4/12,
+          inspMaint:0.3, amort:36, maintReq:0.5, dispute:0.02, leaseEvt:0.0833, applicants:5, mTurn:0.25/12 };
+  // save = share of the task's hours Propra automates away.  SET ME: leases/inspections/listings still at 20% (placeholder).
+  var FEATS=[
+    {id:"accounting", name:"Accounting",       common:true,  save:0.90},
+    {id:"maintenance",name:"Maintenance",      common:true,  save:0.30},
+    {id:"leases",     name:"Leases & Renewals",common:true,  save:0.20},
+    {id:"rent",       name:"Rent Collection",  common:true,  save:0.90},
+    {id:"inspections",name:"Inspections",      common:false, save:0.20},
+    {id:"listings",   name:"Listings",         common:false, save:0.20},
+    {id:"reports",    name:"Reports",          common:false, save:0.80}
+  ];
+  function benchMin(id,N){
+    switch(id){
+      case "accounting":  return 1*N+1*N+0.5*N*A.bankLines+60+2*N+1*N+3*N*A.bills+2*N*A.bills+5*N*A.recAcct+3*(N/A.doorsPerOwner)+120+90;
+      case "rent":        return 1*N+1*N+120+960+10+2*N*A.tenants+60+5*N*A.nsf+10*N*A.mTurn;
+      case "maintenance": return 10*N*A.maintReq+780+5*N*A.maintReq+5*N*A.maintReq+5*N*A.maintReq+10*N*A.dispute+5*N*A.maintReq;
+      case "inspections": return 17.5*N*A.inspMo+10*N*A.inspMo*A.inspMaint+20*N/A.amort+5*N*A.inspMo+10*N*A.inspMo+5*N*A.inspMo;
+      case "leases":      return 120*N*A.leaseEvt+10*N*A.leaseEvt+15*N*A.leaseEvt+5*N*A.leaseEvt+20*N*A.mTurn;
+      case "reports":     return 1*N+60+2*(N/A.doorsPerOwner)+90+3*(N/A.doorsPerOwner);
+      case "listings":    return 650+15*N*A.mTurn+10*N*A.mTurn*A.applicants+10*N*A.mTurn+20*N*A.mTurn*A.applicants+5*N*A.mTurn*A.applicants;
+    } return 0;
+  }
+  function bench(id,N){ return Math.max(1, Math.round(benchMin(id,N)/60)); }
+
+  var $=function(s){ return document.querySelector(s); };
+  var reduce = window.matchMedia && matchMedia("(prefers-reduced-motion:reduce)").matches;
+  function intc(n){ return Math.round(n).toLocaleString("en-CA"); }
+  function money(n){ return "$"+Math.round(n).toLocaleString("en-CA"); }
+
+  var doors=100;
+  var state={}; FEATS.forEach(function(f){ state[f.id]={ selected:!!f.common, hours:bench(f.id,100), edited:false }; });
+
+  // build cards
+  var cardsWrap=$("#proi-cards");
+  FEATS.forEach(function(f){
+    var card=document.createElement("div");
+    card.className="proi__card"; card.setAttribute("role","button"); card.setAttribute("tabindex","0");
+    card.setAttribute("aria-pressed", state[f.id].selected?"true":"false"); card.dataset.id=f.id;
+    card.innerHTML=
+      '<div class="proi__cardtop">'+
+        '<span class="proi__check"><svg viewBox="0 0 14 14"><polyline points="2,7 6,11 12,3"></polyline></svg></span>'+
+        '<span class="proi__cardname">'+f.name+'</span>'+
+        '<span class="proi__cardhrs"><span data-out>'+state[f.id].hours+'</span><small>hrs/mo</small></span>'+
+      '</div>'+
+      '<div class="proi__exp">'+
+        '<div class="proi__explab">Hours it takes each month</div>'+
+        '<input type="range" class="proi__range" data-hrange step="1" aria-label="'+f.name+' hours per month">'+
+      '</div>';
+    cardsWrap.appendChild(card);
+
+    var hRange=card.querySelector("[data-hrange]"), out=card.querySelector("[data-out]");
+    function sync(){
+      var st=state[f.id], bm=bench(f.id,doors);
+      var mx=Math.max(60, Math.ceil(Math.max(bm*2, st.hours)/10)*10);
+      hRange.max=mx; hRange.value=st.hours; out.textContent=st.hours;
+      hRange.style.setProperty("--fill",(st.hours/mx*100)+"%");
+    }
+    card._sync=sync; sync();
+    function sel(){ state[f.id].selected=!state[f.id].selected; card.setAttribute("aria-pressed",state[f.id].selected?"true":"false"); render(); }
+    card.addEventListener("click", function(e){ if(e.target.closest(".proi__exp")) return; sel(); });
+    card.addEventListener("keydown", function(e){ if(e.target.closest(".proi__exp")) return; if(e.key===" "||e.key==="Enter"){ e.preventDefault(); sel(); } });
+    hRange.addEventListener("input", function(){ state[f.id].hours=Math.max(0,+hRange.value); state[f.id].edited=true; sync(); render(); });
+  });
+
+  // doors input + slider (log)
+  var doorsNum=$("#proi-doors"), doorsRange=$("#proi-doors-range");
+  var LMIN=Math.log(5), LMAX=Math.log(5000);
+  function posToDoors(pos){ var d=Math.exp(LMIN+(pos/1000)*(LMAX-LMIN)); d=d<100?Math.round(d):d<1000?Math.round(d/5)*5:Math.round(d/25)*25; return Math.max(5,Math.min(5000,d)); }
+  function doorsToPos(d){ return Math.round((Math.log(Math.max(5,Math.min(5000,d)))-LMIN)/(LMAX-LMIN)*1000); }
+  function refreshDefaults(){ FEATS.forEach(function(f){ if(!state[f.id].edited){ state[f.id].hours=bench(f.id,doors); } var c=cardsWrap.querySelector('[data-id="'+f.id+'"]'); if(c._sync) c._sync(); }); }
+  function applyDoors(v){ doors=Math.max(1,Math.min(5000,Math.round(v||0))); doorsNum.value=doors;
+    var pos=doorsToPos(doors); doorsRange.value=pos; doorsRange.style.setProperty("--fill",(pos/10)+"%"); refreshDefaults(); render(); }
+  doorsRange.addEventListener("input", function(){ applyDoors(posToDoors(+doorsRange.value)); });
+  doorsNum.addEventListener("input", function(){ applyDoors(+doorsNum.value); });
+
+  var arc=$("#proi-arc"), elHrs=$("#proi-hrs"), elYr=$("#proi-hrsyear"), elMoney=$("#proi-money"), elExtra=$("#proi-extradoors");
+  var C=2*Math.PI*90; arc.style.strokeDasharray=C;
+  function animate(el,to,fmt){
+    if(reduce){ el.textContent=fmt(to); return; }
+    var from=parseFloat(el.getAttribute("data-raw")||"0")||0; el.setAttribute("data-raw",to);
+    var s=performance.now();
+    (function step(t){ var p=Math.min(1,(t-s)/500),e=1-Math.pow(1-p,3); el.textContent=fmt(from+(to-from)*e); if(p<1) requestAnimationFrame(step); })(s);
+  }
+
+  function render(){
+    var total=0, saved=0;
+    FEATS.forEach(function(f){ if(state[f.id].selected){ total+=state[f.id].hours; saved+=state[f.id].hours*f.save; } });
+    var auto=total-saved, frac = total>0? saved/total : 0;
+    arc.style.strokeDashoffset = C*(1-frac);
+    animate(elHrs, saved, intc);
+    animate(elYr, saved*12, intc);
+    animate(elMoney, saved*WAGE, money);
+    var extra = auto>0? Math.round(saved*doors/auto) : 0;
+    elExtra.textContent = intc(extra)+(extra===1?" door":" doors");
+  }
+
+  applyDoors(100);
+})();
+</script>
