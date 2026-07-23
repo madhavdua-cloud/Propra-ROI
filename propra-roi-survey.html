@@ -1,0 +1,628 @@
+<!--
+  ===========================================================================
+  PROPRA — TIME ASSESSMENT  (survey-style, v13)
+  ---------------------------------------------------------------------------
+  A SURVEY, not a calculator. The user recognizes where their time goes;
+  we supply the benchmarks and do the math.
+
+  v13 CHANGES FROM v12:
+    - Copy rewritten to an 8th-grade reading level throughout
+    - "get back" -> "reclaim"; "book a demo" -> "schedule a call"
+    - Hour/dollar claims phrased as "up to X" (legal hedge)
+    - Impact statement + dollar figure moved ABOVE the donut
+    - Benchmark disclaimer moved to the top of the result screen (and PDF)
+    - Doors screen now defines "one door = one unit you manage"
+    - Tasks screen reframed as "what could be automated" — only pick
+      tasks you still do BY HAND; skip anything already automated
+    - Donut labels simplified: "Automated" / "Manual"
+    - Wage note no longer names the specific 15% — "benefits, CPP, etc."
+    - Added a bracketed growth % next to "doors you could add"
+    - Optional company-name field added back to the contact screen
+    - "Schedule a call" (CTA + QR) points straight to the real HubSpot
+      meeting link — no more placeholder URL
+    - The video is now a small inline player (fullscreen via native
+      controls), not just a link. Print/PDF still gets a plain clickable
+      link instead, since an embedded <video> won't play in a printout
+    - HubSpot scheduling-embed / dedupe work is NOT in this version —
+      still using the simple contact form + POST leadEndpoint stub
+
+  FLOW — 3 steps + result (mobile-first, built for a trade-show QR scan):
+    1. Contact info  (first + last name, email required; phone + company optional)
+    2. Doors  (manual entry only — typed number is attached to this lead's record)
+    3. What could be automated?  (tap tasks; quick All / Most common / Clear)
+    -> Result: profile bucket, impact statement + dollar figure, disclaimer,
+               a DONUT (automated vs manual), stats w/ growth %,
+               wage adjustable HERE (not before), task breakdown,
+               QR + video link + PDF + "schedule a call" CTA
+
+  SAVINGS RATES (confirmed figures):
+    Accounting 90% · Rent Collection 90% · Owner Reports 80%
+    Maintenance 30% · Inspections 20% · Leases & Renewals 20%
+
+  WAGE: base hourly x1.15 for benefits + CPP = "fully loaded average wage"
+        (displayed to users as "benefits, CPP, etc." — not the raw 15%).
+
+  === SET ME BEFORE LAUNCH ==================================================
+    CONFIG.leadEndpoint  -> POST URL for lead capture. Null = NOTHING captured.
+    CONFIG.scheduleUrl   -> verified "Schedule a call" URL (CTA + QR code).
+    CONFIG.videoUrl      -> product demo video URL (shown at end of flow + in PDF).
+    CONFIG.emailReport   -> true once the backend can email the PDF.
+  ===========================================================================
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Propra ROI Assessment</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+
+<style>
+.psv{
+  --violet:#561BD6; --violet-deep:#4316ad; --violet-2:#9F78FA;
+  --lavender:#ECE4FE; --lavender-soft:#F5F0FE;
+  --ink:#1A1A1A; --muted:#666666; --line:#E7E3EF;
+  --surface:#FFFFFF; --surface-alt:#FAFAFA;
+  --shadow:0 1px 2px rgba(26,16,52,.04), 0 14px 40px -14px rgba(86,27,214,.22);
+  font-family:'Work Sans','Avenir Next','Segoe UI',sans-serif; color:var(--ink);
+  background:radial-gradient(130% 90% at 100% 0%, var(--lavender-soft) 0%, transparent 55%), var(--surface-alt);
+  line-height:1.5; -webkit-font-smoothing:antialiased;
+  min-height:100vh; padding:clamp(16px,4vw,40px); display:flex; justify-content:center; align-items:flex-start;
+  container-type:inline-size;
+}
+.psv *{box-sizing:border-box; margin:0;}
+.psv__shell{width:100%; max-width:560px;}
+
+.psv__top{display:flex; align-items:center; gap:12px; margin-bottom:22px;}
+.psv__brand{font-size:12px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--violet); white-space:nowrap;}
+.psv__bar{flex:1; height:5px; border-radius:5px; background:var(--lavender); overflow:hidden;}
+.psv__bar i{display:block; height:100%; width:0%; border-radius:5px; background:linear-gradient(90deg,var(--violet),var(--violet-2)); transition:width .45s cubic-bezier(.4,0,.1,1);}
+.psv__step{font-size:12px; color:var(--muted); font-weight:500; white-space:nowrap; font-variant-numeric:tabular-nums;}
+
+.psv__card{background:var(--surface); border:1px solid var(--line); border-radius:20px; box-shadow:var(--shadow); padding:clamp(22px,5cqw,34px);}
+.psv__q{font-family:'Poppins',sans-serif; font-weight:700; letter-spacing:-.02em; font-size:clamp(23px,5.4cqw,30px); line-height:1.14;}
+.psv__q em{font-style:normal; color:var(--violet);}
+.psv__help{color:var(--muted); font-size:14.5px; margin-top:10px;}
+
+.psv__opts{display:flex; flex-direction:column; gap:10px; margin-top:16px;}
+.psv__opt{display:flex; align-items:center; gap:12px; width:100%; text-align:left; font:inherit; font-size:15.5px;
+  background:var(--surface); border:1.5px solid var(--line); border-radius:14px; padding:15px 16px; cursor:pointer;
+  transition:border-color .15s, background .15s, box-shadow .15s; color:var(--ink);}
+.psv__opt:hover{border-color:var(--violet-2);}
+.psv__opt:focus-visible{outline:2px solid var(--violet-2); outline-offset:2px;}
+.psv__opt[aria-pressed=true]{border-color:var(--violet); background:var(--lavender-soft); box-shadow:inset 0 0 0 1px var(--violet);}
+.psv__box{flex:0 0 auto; width:22px; height:22px; border-radius:7px; border:1.5px solid #cfc7e0; background:#fff; display:grid; place-items:center; transition:.15s;}
+.psv__opt[aria-pressed=true] .psv__box{background:var(--violet); border-color:var(--violet);}
+.psv__box svg{width:13px; height:13px; stroke:#fff; stroke-width:3; fill:none; opacity:0; transition:.15s;}
+.psv__opt[aria-pressed=true] .psv__box svg{opacity:1;}
+.psv__optname{font-weight:600;}
+.psv__optsub{display:block; font-size:12.5px; color:var(--muted); font-weight:400; margin-top:2px;}
+
+.psv__grouplab{font-size:11.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin:20px 0 10px;}
+
+/* quick select buttons */
+.psv__quick{display:flex; gap:8px; flex-wrap:wrap; margin-top:16px;}
+.psv__quickbtn{font:inherit; font-size:13px; font-weight:600; color:var(--muted); background:none; border:1.5px solid var(--line); border-radius:20px; padding:7px 14px; cursor:pointer; transition:.15s;}
+.psv__quickbtn:hover{color:var(--violet); border-color:var(--violet-2);}
+.psv__quickbtn:focus-visible{outline:2px solid var(--violet-2); outline-offset:2px;}
+
+.psv__input{width:100%; font:inherit; font-family:'Poppins',sans-serif; font-weight:600; font-size:18px; color:var(--ink);
+  border:1.5px solid var(--line); border-radius:14px; padding:15px 16px; background:var(--surface); transition:border-color .15s; -moz-appearance:textfield;}
+.psv__input::-webkit-outer-spin-button,.psv__input::-webkit-inner-spin-button{-webkit-appearance:none;}
+.psv__input::placeholder{color:#b9b2c8; font-weight:500;}
+.psv__input:focus{outline:none; border-color:var(--violet); box-shadow:0 0 0 3px var(--lavender);}
+.psv__err{font-size:12.5px; color:#c4453d; margin-top:8px; display:none;}
+.psv__err.show{display:block;}
+.psv__or{text-align:center; font-size:12px; color:var(--muted); margin:14px 0 12px;}
+
+.psv__forminline{display:flex; flex-direction:column; gap:12px; margin-top:22px;}
+.psv__formrow{display:flex; gap:10px; flex-wrap:wrap;}
+.psv__formrow .psv__input{flex:1 1 140px;}
+
+.psv__qr{margin-top:16px; border:1px solid var(--line); border-radius:14px; padding:16px; background:var(--surface);
+  display:flex; flex-direction:column; align-items:center; text-align:center; gap:8px;}
+.psv__qr canvas{border-radius:8px; display:block;}
+.psv__qr b{font-family:'Poppins',sans-serif; font-size:14px; font-weight:600;}
+.psv__qr span{font-size:12px; color:var(--muted); max-width:220px;}
+
+.psv__nav{display:flex; gap:10px; margin-top:24px; align-items:center;}
+.psv__next{flex:1; font:inherit; font-family:'Poppins',sans-serif; font-weight:600; font-size:16px; background:var(--violet); color:#fff;
+  border:none; border-radius:13px; padding:16px; cursor:pointer; transition:background .15s, opacity .15s;}
+.psv__next:hover{background:var(--violet-deep);}
+.psv__next:disabled{opacity:.4; cursor:not-allowed;}
+.psv__next:focus-visible{outline:2px solid var(--violet-2); outline-offset:3px;}
+.psv__back{font:inherit; font-size:14px; font-weight:600; color:var(--muted); background:none; border:none; padding:16px 6px; cursor:pointer;}
+.psv__back:hover{color:var(--violet);}
+.psv__privacy{font-size:11.5px; color:var(--muted); text-align:center; margin-top:14px; line-height:1.5;}
+
+/* RESULT */
+.psv__bucket{display:inline-flex; align-items:center; gap:7px; background:var(--lavender-soft); border:1px solid var(--lavender);
+  border-radius:20px; padding:5px 13px; font-size:12.5px; font-weight:600; color:var(--violet); margin-bottom:14px;}
+.psv__bucket svg{width:14px; height:14px; fill:currentColor;}
+.psv__rtitle{font-family:'Poppins',sans-serif; font-weight:700; letter-spacing:-.02em; font-size:clamp(22px,5cqw,28px); line-height:1.16;}
+.psv__rtitle em{font-style:normal; color:var(--violet);}
+
+/* donut: manual vs automated */
+.psv__donut{margin-top:20px; border:1px solid var(--line); border-radius:14px; padding:18px; background:var(--surface);
+  display:flex; align-items:center; gap:18px;}
+@container (max-width:420px){ .psv__donut{flex-direction:column; text-align:center; gap:14px;} }
+.psv__ring{position:relative; flex:0 0 auto; width:140px; height:140px;}
+.psv__ring svg{width:140px; height:140px; transform:rotate(-90deg);}
+.psv__ring circle{fill:none; stroke-width:18;}
+.psv__ring .track{stroke:var(--lavender);}
+.psv__ring .arc{stroke:url(#psvGrad); stroke-linecap:round; transition:stroke-dashoffset .8s cubic-bezier(.4,0,.1,1);}
+.psv__ringctr{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;}
+.psv__ringctr b{font-family:'Poppins',sans-serif; font-weight:700; font-size:30px; color:var(--violet); line-height:1; letter-spacing:-.02em; font-variant-numeric:tabular-nums; text-align:center;}
+.psv__ringctr span{font-size:10.5px; color:var(--muted); margin-top:4px; max-width:82px; font-weight:500; text-align:center;}
+.psv__legend{flex:1; min-width:0;}
+.psv__leg{display:flex; align-items:center; gap:9px; font-size:13px; margin-bottom:9px;}
+.psv__leg:last-child{margin-bottom:0;}
+.psv__leg i{width:12px; height:12px; border-radius:4px; flex:0 0 auto;}
+.psv__leg i.soft{background:linear-gradient(135deg,var(--violet),var(--violet-2));}
+.psv__leg i.hand{background:var(--lavender);}
+.psv__leg .lt{font-weight:600;}
+.psv__leg .lv{margin-left:auto; font-family:'Poppins',sans-serif; font-weight:700; font-variant-numeric:tabular-nums; padding-left:10px;}
+
+.psv__hero{margin-top:14px; background:linear-gradient(145deg,var(--violet) 0%, #6a2ce6 55%, var(--violet-2) 130%); border-radius:16px;
+  padding:26px 22px; color:#fff; text-align:center; position:relative; overflow:hidden;}
+.psv__hero::after{content:""; position:absolute; right:-40px; top:-50px; width:180px; height:180px; border-radius:50%;
+  background:radial-gradient(circle,rgba(255,255,255,.2),transparent 70%);}
+.psv__herolab{font-size:12px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; opacity:.9; position:relative;}
+.psv__herobig{font-family:'Poppins',sans-serif; font-weight:700; font-size:clamp(46px,12cqw,62px); line-height:1; letter-spacing:-.03em;
+  margin:8px 0 4px; font-variant-numeric:tabular-nums; position:relative;}
+.psv__herounit{font-size:15px; font-weight:600; opacity:.95; position:relative;}
+.psv__herosub{font-size:14px; opacity:.95; margin-top:12px; padding-top:12px; border-top:1px solid rgba(255,255,255,.25); position:relative;}
+.psv__herosub b{font-weight:700; font-size:17px;}
+
+.psv__rstats{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px;}
+.psv__rstat{background:var(--surface); border:1px solid var(--line); border-radius:13px; padding:14px;}
+.psv__rstat .k{font-size:11.5px; color:var(--muted); font-weight:500;}
+.psv__rstat .v{font-family:'Poppins',sans-serif; font-weight:700; font-size:20px; margin-top:3px; font-variant-numeric:tabular-nums;}
+.psv__growth{font-size:12px; font-weight:600; color:var(--violet-2); margin-left:3px; white-space:nowrap;}
+
+.psv__wage{margin-top:12px; border:1px dashed var(--line); border-radius:13px; padding:13px 15px; background:var(--surface);}
+.psv__wagetop{display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:12.5px; color:var(--muted);}
+.psv__wagetop b{color:var(--ink); font-weight:600;}
+.psv__wagebtn{font:inherit; font-size:12.5px; font-weight:600; color:var(--violet); background:none; border:none; cursor:pointer; padding:0;}
+.psv__wagebtn:hover{text-decoration:underline;}
+.psv__wagebody{display:none; margin-top:12px;}
+.psv__wagebody.on{display:block;}
+input[type=range].psv__range{-webkit-appearance:none; appearance:none; width:100%; height:6px; border-radius:6px;
+  background:linear-gradient(90deg,var(--violet) var(--fill,25%),var(--lavender) var(--fill,25%)); cursor:pointer;}
+input[type=range].psv__range::-webkit-slider-thumb{-webkit-appearance:none; width:24px; height:24px; border-radius:50%; background:#fff; border:2.5px solid var(--violet); box-shadow:0 2px 8px rgba(86,27,214,.35);}
+input[type=range].psv__range::-moz-range-thumb{width:24px; height:24px; border-radius:50%; background:#fff; border:2.5px solid var(--violet); box-shadow:0 2px 8px rgba(86,27,214,.35);}
+.psv__scale{display:flex; justify-content:space-between; font-size:11px; color:var(--muted); margin-top:7px;}
+.psv__loadednote{font-size:11.5px; color:var(--muted); margin-top:9px;}
+.psv__loadednote b{color:var(--violet); font-weight:600;}
+
+.psv__rlist{margin-top:20px;}
+.psv__rlisthead{font-size:12.5px; color:var(--muted); margin-bottom:6px;}
+.psv__rrow{display:flex; align-items:center; gap:10px; padding:11px 0; border-bottom:1px solid var(--line); font-size:14.5px;}
+.psv__rrow:last-child{border-bottom:none;}
+.psv__rrow .nm{font-weight:600;}
+.psv__rrow .hr{margin-left:auto; font-family:'Poppins',sans-serif; font-weight:700; color:var(--violet); font-variant-numeric:tabular-nums; white-space:nowrap;}
+
+.psv__cta{margin-top:22px; display:block; width:100%; font:inherit; font-family:'Poppins',sans-serif; font-weight:600; font-size:16px;
+  background:var(--violet); color:#fff; border:none; border-radius:13px; padding:17px; cursor:pointer; text-align:center; text-decoration:none; transition:background .15s;}
+.psv__cta:hover{background:var(--violet-deep);}
+.psv__cta2{margin-top:10px; display:block; width:100%; font:inherit; font-family:'Poppins',sans-serif; font-weight:600; font-size:15px;
+  background:#fff; color:var(--violet); border:1.5px solid var(--violet); border-radius:13px; padding:14px; cursor:pointer; text-align:center; transition:.15s;}
+.psv__cta2:hover{background:var(--lavender-soft);}
+.psv__ctasub{font-size:12.5px; color:var(--muted); text-align:center; margin-top:12px;}
+.psv__restart{display:block; margin:14px auto 0; font:inherit; font-size:13px; font-weight:600; color:var(--muted); background:none; border:none; cursor:pointer;}
+.psv__restart:hover{color:var(--violet);}
+.psv__fine{font-size:11.5px; color:var(--muted); text-align:center; margin-top:18px; line-height:1.5;}
+.psv__fine--top{text-align:left; margin-top:8px; margin-bottom:0;}
+
+.psv__video{margin-top:14px; display:flex; flex-direction:column; align-items:center; gap:8px;}
+.psv__video span{font-size:12.5px; color:var(--muted); font-weight:600;}
+.psv__video video{width:286px; max-width:100%; aspect-ratio:16/9; border-radius:12px; background:#000; display:block;}
+
+.psv__videolink-print{display:none;}
+
+.psv__screen{display:none;}
+.psv__screen.on{display:block; animation:psvIn .35s cubic-bezier(.2,.7,.3,1);}
+@keyframes psvIn{ from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:none;} }
+@media (prefers-reduced-motion:reduce){ .psv__screen.on{animation:none;} .psv__bar i,.psv__ring .arc{transition:none;} }
+
+@media print{
+  body *{visibility:hidden !important;}
+  .psv, .psv *{visibility:visible !important;}
+  .psv{padding:0 !important; background:#fff !important; display:block !important;}
+  .psv__shell{max-width:100% !important;}
+  .psv__top,.psv__cta,.psv__cta2,.psv__restart,.psv__wagebtn,.psv__wagebody,.psv__ctasub,.psv__qr,.psv__video{display:none !important;}
+  .psv__videolink-print{display:block !important; text-align:center; font-size:12.5px; margin-top:10px;}
+  .psv__videolink-print a{color:var(--violet); font-weight:600;}
+  .psv__card{border:none !important; box-shadow:none !important; padding:0 !important;}
+  .psv__hero,.psv__ring .arc,.psv__bucket,.psv__leg i{-webkit-print-color-adjust:exact; print-color-adjust:exact;}
+  .psv__screen{display:none !important;}
+  .psv__screen[data-screen="4"]{display:block !important;}
+}
+</style>
+</head>
+<body class="psv">
+ <div class="psv__shell">
+
+  <div class="psv__top">
+    <span class="psv__brand">Propra</span>
+    <span class="psv__bar"><i id="psv-bar"></i></span>
+    <span class="psv__step" id="psv-step">1 of 3</span>
+  </div>
+
+  <div class="psv__card">
+
+    <!-- 1 — CONTACT GATE -->
+    <section class="psv__screen on" data-screen="1">
+      <h1 class="psv__q">See where your<br><em>time</em> goes.</h1>
+      <p class="psv__help">Answer three quick questions. See the hours and money you could reclaim.</p>
+      <div class="psv__forminline">
+        <div class="psv__formrow">
+          <input class="psv__input" id="psv-fname" type="text" placeholder="First name" autocomplete="given-name" aria-label="First name">
+          <input class="psv__input" id="psv-lname" type="text" placeholder="Last name" autocomplete="family-name" aria-label="Last name">
+        </div>
+        <input class="psv__input" id="psv-email" type="email" placeholder="Work email" autocomplete="email" aria-label="Work email">
+        <div class="psv__formrow">
+          <input class="psv__input" id="psv-phone" type="tel" placeholder="Phone number (optional)" autocomplete="tel" aria-label="Phone number (optional)">
+          <input class="psv__input" id="psv-company" type="text" placeholder="Company name (optional)" autocomplete="organization" aria-label="Company name (optional)">
+        </div>
+        <div class="psv__err" id="psv-email-err">Please add your first name, last name, and a valid email.</div>
+      </div>
+      <div class="psv__nav"><button class="psv__next" data-next="1" type="button">Start</button></div>
+      <p class="psv__privacy" id="psv-privacy">We'll send your results here.</p>
+    </section>
+
+    <!-- 2 — DOORS -->
+    <section class="psv__screen" data-screen="2">
+      <h1 class="psv__q">How many doors<br>do you <em>manage</em>?</h1>
+      <p class="psv__help">One door = one unit you manage. Type the exact number.</p>
+      <input class="psv__input" id="psv-doors" type="number" min="1" max="10000" placeholder="e.g. 140" inputmode="numeric" aria-label="Number of doors" style="margin-top:22px">
+      <div class="psv__nav">
+        <button class="psv__back" data-back="2" type="button">Back</button>
+        <button class="psv__next" data-next="2" type="button" disabled>Continue</button>
+      </div>
+    </section>
+
+    <!-- 3 — WHERE IS YOUR TIME GOING -->
+    <section class="psv__screen" data-screen="3">
+      <h1 class="psv__q">What tasks could<br>be <em>automated</em>?</h1>
+      <p class="psv__help">Pick the tasks you still do by hand. Skip anything you've already automated.</p>
+      <div id="psv-taskops"></div>
+      <div class="psv__quick">
+        <button class="psv__quickbtn" data-quick="all" type="button">Select all</button>
+        <button class="psv__quickbtn" data-quick="common" type="button">Most common</button>
+        <button class="psv__quickbtn" data-quick="clear" type="button">Clear</button>
+      </div>
+      <div class="psv__nav">
+        <button class="psv__back" data-back="3" type="button">Back</button>
+        <button class="psv__next" data-next="3" type="button" disabled>See my results</button>
+      </div>
+    </section>
+
+    <!-- RESULT -->
+    <section class="psv__screen" data-screen="4">
+      <div class="psv__bucket"><svg viewBox="0 0 24 24"><path d="M12 2l2.2 6.6L21 11l-6.8 2.4L12 20l-2.2-6.6L3 11l6.8-2.4z"/></svg><span id="psv-bucket">—</span></div>
+      <h1 class="psv__rtitle">Here's the time you<br>would <em>reclaim</em>.</h1>
+      <p class="psv__fine psv__fine--top">These numbers are estimates, not guarantees. They're based on typical Canadian property managers doing these tasks by hand — yours may differ if you've already automated some tasks.</p>
+
+      <div class="psv__hero">
+        <div class="psv__herolab">You could reclaim up to</div>
+        <div class="psv__herobig" id="psv-hrs">0</div>
+        <div class="psv__herounit">hours every year</div>
+        <div class="psv__herosub">That's up to <b id="psv-money">$0</b> a year in staff time</div>
+      </div>
+
+      <!-- donut: automated vs manual -->
+      <div class="psv__donut">
+        <div class="psv__ring">
+          <svg viewBox="0 0 140 140">
+            <defs><linearGradient id="psvGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#561BD6"/><stop offset="1" stop-color="#9F78FA"/></linearGradient></defs>
+            <circle class="track" cx="70" cy="70" r="61"></circle>
+            <circle class="arc" id="psv-arc" cx="70" cy="70" r="61"></circle>
+          </svg>
+          <div class="psv__ringctr"><b id="psv-softpct">0%</b><span>automated</span></div>
+        </div>
+        <div class="psv__legend">
+          <div class="psv__leg"><i class="soft"></i><span class="lt">Automated</span><span class="lv" id="psv-soft-hrs">0 hrs</span></div>
+          <div class="psv__leg"><i class="hand"></i><span class="lt">Manual</span><span class="lv" id="psv-hand-hrs">0 hrs</span></div>
+        </div>
+      </div>
+
+      <div class="psv__rstats">
+        <div class="psv__rstat"><div class="k">Time saved each month</div><div class="v">Up to <span id="psv-hrsmo">0</span> hrs</div></div>
+        <div class="psv__rstat"><div class="k">Doors you could add with time saved</div><div class="v">Up to <span id="psv-doorsabs">0</span><span class="psv__growth" id="psv-doorsgrowth"></span></div></div>
+      </div>
+
+      <div class="psv__wage">
+        <div class="psv__wagetop">
+          <span>Based on <b id="psv-wagenow">$30</b>/hour staff pay</span>
+          <button class="psv__wagebtn" id="psv-wagetoggle" type="button">Adjust</button>
+        </div>
+        <div class="psv__wagebody" id="psv-wagebody">
+          <input class="psv__range" id="psv-wage" type="range" min="18" max="75" step="1" value="30" aria-label="Base hourly wage">
+          <div class="psv__scale"><span>$18</span><span>$45</span><span>$75</span></div>
+          <div class="psv__loadednote">We add a bit for <b>benefits, CPP, etc.</b>, so we use a fully loaded wage of <b id="psv-loaded">$34.50</b>/hour.</div>
+        </div>
+      </div>
+
+      <div class="psv__rlist">
+        <div class="psv__rlisthead">Where the time comes from</div>
+        <div id="psv-rows"></div>
+      </div>
+
+      <div class="psv__qr">
+        <canvas id="psv-qrcode" width="144" height="144"></canvas>
+        <b>Scan to schedule a call</b>
+        <span>Open it on your phone so you can save it for later</span>
+      </div>
+      <p class="psv__videolink-print"><a id="video-link-print" href="#" target="_blank" rel="noopener">▶ Watch how Propra works (2 min)</a></p>
+      <div class="psv__video">
+        <span>Watch how Propra works</span>
+        <video id="psv-video" controls playsinline preload="none"></video>
+      </div>
+
+      <a class="psv__cta" id="schedule-link" href="#" target="_blank" rel="noopener">Schedule a call</a>
+      <button class="psv__cta2" id="psv-pdf" type="button">Download my report (PDF)</button>
+      <p class="psv__ctasub">See how we'd automate this for you.</p>
+      <button class="psv__restart" id="psv-restart" type="button">Start over</button>
+    </section>
+
+  </div>
+ </div>
+</body>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ===== SET ME ========================================================= */
+  var CONFIG = {
+    leadEndpoint: null,                          // POST URL. Null = nothing captured.
+    scheduleUrl: "https://meetings.hubspot.com/cathren-rodriguez1?uuid=aa2c6444-1b02-4cbc-9026-227b5832b2d3",
+    videoUrl: "https://19923625.fs1.hubspotusercontent-na1.net/hubfs/19923625/Propra%20Demo%202026.mp4",
+    emailReport: false                           // true once the backend can email the PDF
+  };
+  /* ====================================================================== */
+
+  var LOAD=1.15;   // benefits + CPP -> fully loaded average wage
+  var A={ bankLines:3, bills:1.5, recAcct:3, doorsPerOwner:3, tenants:1, nsf:0.05, inspMo:4/12,
+          inspMaint:0.3, amort:36, maintReq:0.5, dispute:0.02, leaseEvt:0.0833, mTurn:0.25/12 };
+
+  var TASKS=[
+    {id:"accounting", name:"Accounting & bookkeeping", sub:"Reconciling, GST, owner statements",     save:0.90, w:3, tier:"primary", common:true},
+    {id:"rent",       name:"Rent collection",          sub:"Chasing rent, NSFs, late fees",          save:0.90, w:3, tier:"primary", common:true},
+    {id:"reports",    name:"Owner reports",            sub:"Building and sending statements",        save:0.80, w:3, tier:"primary", common:true},
+    {id:"maintenance",name:"Maintenance",              sub:"Work orders, contractor back-and-forth", save:0.30, w:2, tier:"secondary", common:false},
+    {id:"inspections",name:"Inspections",              sub:"Scheduling, photos, paperwork",          save:0.20, w:2, tier:"secondary", common:false},
+    {id:"leases",     name:"Leases & renewals",        sub:"Signing, renewals, move-ins",            save:0.20, w:2, tier:"secondary", common:false}
+  ];
+  var MAXW=TASKS.reduce(function(a,t){return a+t.w;},0);
+
+  function benchHrs(id,N){
+    var m=0;
+    switch(id){
+      case "accounting":  m=1*N+1*N+0.5*N*A.bankLines+60+2*N+1*N+3*N*A.bills+2*N*A.bills+5*N*A.recAcct+3*(N/A.doorsPerOwner)+120+90; break;
+      case "rent":        m=1*N+1*N+120+960+10+2*N*A.tenants+60+5*N*A.nsf+10*N*A.mTurn; break;
+      case "reports":     m=1*N+60+2*(N/A.doorsPerOwner)+90+3*(N/A.doorsPerOwner); break;
+      case "maintenance": m=10*N*A.maintReq+780+5*N*A.maintReq+5*N*A.maintReq+5*N*A.maintReq+10*N*A.dispute+5*N*A.maintReq; break;
+      case "inspections": m=17.5*N*A.inspMo+10*N*A.inspMo*A.inspMaint+20*N/A.amort+5*N*A.inspMo+10*N*A.inspMo+5*N*A.inspMo; break;
+      case "leases":      m=120*N*A.leaseEvt+10*N*A.leaseEvt+15*N*A.leaseEvt+5*N*A.leaseEvt+20*N*A.mTurn; break;
+    }
+    return m/60;
+  }
+
+  var $=function(s){ return document.querySelector(s); };
+  var reduce = window.matchMedia && matchMedia("(prefers-reduced-motion:reduce)").matches;
+  function intc(n){ return Math.round(n).toLocaleString("en-CA"); }
+  function money(n){ return "$"+Math.round(n).toLocaleString("en-CA"); }
+
+  var answers={ firstName:"", lastName:"", email:"", phone:"", company:"", doors:0, tasks:{}, wage:30 };   // tasks[id] = true/false
+  TASKS.forEach(function(t){ answers.tasks[t.id]=false; });
+  var TOTAL=3;
+
+  $("#schedule-link").href = CONFIG.scheduleUrl;
+  $("#psv-video").src = CONFIG.videoUrl;
+  $("#video-link-print").href = CONFIG.videoUrl;
+  if(!CONFIG.emailReport){ $("#psv-privacy").textContent = "We'll use this to prepare your results."; }
+
+  // QR code — scan to open the scheduling link on your own phone
+  if(window.QRious){
+    try{
+      new QRious({ element: $("#psv-qrcode"), value: CONFIG.scheduleUrl, size: 144, foreground:"#561BD6", background:"#ffffff", level:"H" });
+    }catch(e){ console.error("[Propra] QR code render failed:", e); }
+  }
+
+  var bar=$("#psv-bar"), stepLab=$("#psv-step");
+  function showStep(n){
+    document.querySelectorAll(".psv__screen").forEach(function(s){ s.classList.toggle("on", +s.dataset.screen===n); });
+    if(n<=TOTAL){ bar.style.width=((n-1)/TOTAL*100)+"%"; stepLab.textContent=n+" of "+TOTAL; }
+    else { bar.style.width="100%"; stepLab.textContent="Your results"; }
+    var c=document.querySelector(".psv__card");
+    if(c && c.scrollIntoView) c.scrollIntoView({behavior: reduce?"auto":"smooth", block:"start"});
+  }
+
+  // 1 — contact gate (first name, last name, email required; phone, company optional)
+  var fnameIn=$("#psv-fname"), lnameIn=$("#psv-lname"), emailIn=$("#psv-email"),
+      phoneIn=$("#psv-phone"), companyIn=$("#psv-company"), emailErr=$("#psv-email-err");
+  function validEmail(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(v).trim()); }
+  function step1Valid(){
+    return fnameIn.value.trim().length>0 && lnameIn.value.trim().length>0 && validEmail(emailIn.value);
+  }
+  $('[data-next="1"]').addEventListener("click", function(){
+    if(!step1Valid()){
+      emailErr.classList.add("show");
+      if(!fnameIn.value.trim()) fnameIn.focus();
+      else if(!lnameIn.value.trim()) lnameIn.focus();
+      else emailIn.focus();
+      return;
+    }
+    emailErr.classList.remove("show");
+    answers.firstName=fnameIn.value.trim();
+    answers.lastName=lnameIn.value.trim();
+    answers.email=emailIn.value.trim();
+    answers.phone=phoneIn.value.trim();
+    answers.company=companyIn.value.trim();
+    showStep(2);
+  });
+  [fnameIn,lnameIn,emailIn].forEach(function(el){
+    el.addEventListener("input", function(){ if(step1Valid()) emailErr.classList.remove("show"); });
+    el.addEventListener("keydown", function(e){ if(e.key==="Enter") $('[data-next="1"]').click(); });
+  });
+
+  // 2 — doors (manual entry only, attached to this person's record via `answers`)
+  var doorsIn=$("#psv-doors"), doorsNext=$('[data-next="2"]');
+  doorsIn.addEventListener("input", function(){
+    var v=parseInt(doorsIn.value,10);
+    if(v>0){ answers.doors=Math.min(10000,v); doorsNext.disabled=false; }
+    else { answers.doors=0; doorsNext.disabled=true; }
+  });
+  doorsNext.addEventListener("click", function(){ if(answers.doors>0) showStep(3); });
+
+  // 3 — where is your time going (simple tap-to-include, no how-manual selector)
+  var taskWrap=$("#psv-taskops"), tasksNext=$('[data-next="3"]');
+  function refreshTasksNext(){ tasksNext.disabled = !TASKS.some(function(x){ return answers.tasks[x.id]; }); }
+  ["primary","secondary"].forEach(function(tier){
+    var lab=document.createElement("div"); lab.className="psv__grouplab";
+    lab.textContent = tier==="primary" ? "Main tasks" : "Other tasks";
+    taskWrap.appendChild(lab);
+    var group=document.createElement("div"); group.className="psv__opts"; group.style.marginTop="0";
+    taskWrap.appendChild(group);
+    TASKS.filter(function(t){return t.tier===tier;}).forEach(function(t){
+      var b=document.createElement("button");
+      b.type="button"; b.className="psv__opt"; b.setAttribute("aria-pressed","false"); b.dataset.id=t.id;
+      b.innerHTML='<span class="psv__box"><svg viewBox="0 0 14 14"><polyline points="2,7 6,11 12,3"></polyline></svg></span>'+
+                  '<span><span class="psv__optname">'+t.name+'</span><span class="psv__optsub">'+t.sub+'</span></span>';
+      group.appendChild(b);
+      b.addEventListener("click", function(){
+        answers.tasks[t.id]=!answers.tasks[t.id];
+        b.setAttribute("aria-pressed", answers.tasks[t.id]?"true":"false");
+        refreshTasksNext();
+      });
+    });
+  });
+  document.querySelectorAll('[data-quick]').forEach(function(btn){
+    btn.addEventListener("click", function(){
+      var m=btn.dataset.quick;
+      TASKS.forEach(function(t){
+        var s = m==="all"?true : m==="clear"?false : m==="common"?!!t.common : answers.tasks[t.id];
+        answers.tasks[t.id]=s;
+        taskWrap.querySelector('[data-id="'+t.id+'"]').setAttribute("aria-pressed", s?"true":"false");
+      });
+      refreshTasksNext();
+    });
+  });
+  tasksNext.addEventListener("click", function(){ computeResult(); submitLead(); showStep(4); });
+
+  document.querySelectorAll("[data-back]").forEach(function(b){
+    b.addEventListener("click", function(){ showStep(+b.dataset.back - 1); });
+  });
+
+  // wage adjuster — on the RESULT screen
+  var wageIn=$("#psv-wage"), wageNow=$("#psv-wagenow"), loadedOut=$("#psv-loaded"),
+      wageBody=$("#psv-wagebody"), wageToggle=$("#psv-wagetoggle");
+  wageToggle.addEventListener("click", function(){
+    var on=wageBody.classList.toggle("on"); wageToggle.textContent = on ? "Done" : "Adjust";
+  });
+  function syncWage(){
+    var v=+wageIn.value; answers.wage=v;
+    wageNow.textContent="$"+v; loadedOut.textContent="$"+(v*LOAD).toFixed(2);
+    wageIn.style.setProperty("--fill", ((v-18)/(75-18)*100)+"%");
+  }
+  wageIn.addEventListener("input", function(){ syncWage(); computeResult(true); });
+  syncWage();
+
+  function animate(el,to,fmt,instant){
+    if(reduce||instant){ el.textContent=fmt(to); return; }
+    var s=performance.now(), dur=900;
+    (function step(t){ var p=Math.min(1,(t-s)/dur), e=1-Math.pow(1-p,3);
+      el.textContent=fmt(to*e); if(p<1) requestAnimationFrame(step); })(s);
+  }
+
+  var arc=$("#psv-arc"), C=2*Math.PI*61; arc.style.strokeDasharray=C;
+  var lastResult=null;
+
+  function computeResult(instant){
+    var N=answers.doors, loaded=answers.wage*LOAD;
+    var picked=TASKS.filter(function(t){ return answers.tasks[t.id]; });
+
+    var yoursHrs=0, savedHrs=0, score=0, rows=[];
+    picked.forEach(function(t){
+      var h=benchHrs(t.id,N), s=h*t.save;
+      yoursHrs+=h; savedHrs+=s; score+=t.w;
+      rows.push({ name:t.name, hrs:s });
+    });
+    var handHrs=yoursHrs-savedHrs;                       // still manual
+    var softFrac = yoursHrs>0 ? savedHrs/yoursHrs : 0;   // automated
+
+    var pct=score/MAXW;
+    var bucket = pct>=0.5 ? "Heavy manual load" : "Light manual load";
+    $("#psv-bucket").textContent=bucket;
+
+    // donut: manual vs automated
+    arc.style.strokeDashoffset = C*(1-softFrac);
+    $("#psv-softpct").textContent = Math.round(softFrac*100)+"%";
+    $("#psv-soft-hrs").textContent = intc(savedHrs)+" hrs";
+    $("#psv-hand-hrs").textContent = intc(handHrs)+" hrs";
+
+    animate($("#psv-hrs"), savedHrs*12, intc, instant);
+    animate($("#psv-money"), savedHrs*12*loaded, money, instant);
+    animate($("#psv-hrsmo"), savedHrs, intc, instant);
+
+    // capacity vs the team's WHOLE admin workload, capped
+    var allHrs=0; TASKS.forEach(function(t){ allHrs+=benchHrs(t.id,N); });
+    var remaining=Math.max(allHrs-savedHrs, allHrs*0.25);
+    var extra=Math.min(Math.round(savedHrs*N/remaining), Math.round(N*0.75));
+    animate($("#psv-doorsabs"), extra, intc, instant);
+    var growthPct = N>0 ? Math.round((extra/N)*100) : 0;
+    $("#psv-doorsgrowth").textContent = " (+"+growthPct+"%)";
+
+    rows.sort(function(a,b){ return b.hrs-a.hrs; });
+    $("#psv-rows").innerHTML = rows.map(function(r){
+      return '<div class="psv__rrow"><span class="nm">'+r.name+'</span><span class="hr">'+intc(r.hrs*12)+' hrs/yr</span></div>';
+    }).join("");
+
+    lastResult={ bucket:bucket, yoursHrsMo:Math.round(yoursHrs), softwareHrsMo:Math.round(savedHrs),
+      handHrsMo:Math.round(handHrs), softwarePct:Math.round(softFrac*100),
+      savedHrsYr:Math.round(savedHrs*12), savedDollarsYr:Math.round(savedHrs*12*loaded),
+      extraDoors:extra, extraDoorsGrowthPct:growthPct };
+  }
+
+  function leadPayload(){
+    return {
+      firstName: answers.firstName, lastName: answers.lastName, email: answers.email,
+      phone: answers.phone || null, company: answers.company || null,
+      doors: answers.doors,
+      baseWage: answers.wage, loadedWage:+(answers.wage*LOAD).toFixed(2),
+      tasks: TASKS.filter(function(t){return answers.tasks[t.id];}).map(function(t){ return t.id; }),
+      result: lastResult, submittedAt:new Date().toISOString(), source:"roi-assessment"
+    };
+  }
+  function submitLead(){
+    var payload=leadPayload();
+    if(!CONFIG.leadEndpoint){ console.warn("[Propra] No leadEndpoint set — lead NOT captured. Payload:", payload); return; }
+    try{
+      fetch(CONFIG.leadEndpoint, { method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify(payload), keepalive:true })
+        .catch(function(e){ console.error("[Propra] Lead submit failed:", e); });
+    }catch(e){ console.error("[Propra] Lead submit failed:", e); }
+  }
+
+  $("#psv-pdf").addEventListener("click", function(){ window.print(); });
+
+  $("#psv-restart").addEventListener("click", function(){
+    answers={ firstName:"", lastName:"", email:"", phone:"", company:"", doors:0, tasks:{}, wage:30 };
+    TASKS.forEach(function(t){ answers.tasks[t.id]=false; });
+    fnameIn.value=""; lnameIn.value=""; emailIn.value=""; phoneIn.value=""; companyIn.value="";
+    doorsIn.value=""; wageIn.value=30; syncWage();
+    wageBody.classList.remove("on"); wageToggle.textContent="Adjust";
+    document.querySelectorAll(".psv__opt").forEach(function(b){ b.setAttribute("aria-pressed","false"); });
+    doorsNext.disabled=true; tasksNext.disabled=true;
+    showStep(1);
+  });
+
+  showStep(1);
+})();
+</script>
+</html>
